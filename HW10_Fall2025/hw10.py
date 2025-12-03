@@ -9,6 +9,7 @@ from sklearn import metrics
 
 from utils import load_Dataset
 
+
 def conf_matrix(y_pred, y_true, num_class):
     """
     agrs:
@@ -19,8 +20,13 @@ def conf_matrix(y_pred, y_true, num_class):
     Returns:
     M : Confusion matrix as a numpy array with dimensions (num_class, num_class)
     """
-    # Your code here. We ask that you not use an external library like sklearn to create the confusion matrix and code this function manually
-    return
+    M = np.zeros((num_class, num_class), dtype=float)
+
+    for true_label, pred_label in zip(y_true, y_pred):
+        M[int(true_label), int(pred_label)] += 1
+
+    return M
+
 
 def get_model(name, params):
     """
@@ -31,86 +37,101 @@ def get_model(name, params):
     Returns:
     model : sklearn model object
     """
-    model = None
     if name == "KNN":
-        k = params # Note that the expected parameters have already been extracted here
-        # Define KNN model using sklearn KNeighborsClassifier object 
+        k = params  # Note that the expected parameters have already been extracted here
+        # Define KNN model using sklearn KNeighborsClassifier object
         # Note: you should include n_neighbors=k as an argument when initializing the model
-    
+
+        model = KNeighborsClassifier(n_neighbors=k)
+
     elif name == "SVM":
-        rand_state, prob = params # Note that the expected parameters have already been extracted here
+        rand_state, prob = params  # Note that the expected parameters have already been extracted here
         # Define SVM model using sklearn SVC object
         # Note: you should include random_state=rand_state and probability=prob as arguments when initializing the model
-    
+
+        model = SVC(random_state=rand_state, probability=prob)
+
     elif name == "MLP":
-        hl_sizes, rand_state, act_func = params # Note that the expected parameters have already been extracted here
+        hl_sizes, rand_state, act_func = params  # Note that the expected parameters have already been extracted here
         # Define MLP model using sklearn MLPClassifier object
         # Note: you should include hidden_layer_sizes=hl_sizes, random_state=rand_state, and activation=act_func when initializing the model
+        model = MLPClassifier(hidden_layer_sizes=hl_sizes, random_state=rand_state, activation=act_func)
 
     else:
         print("ERROR: Model name not recognized/supported. Returned None")
 
     return model
 
+
 def get_model_results(model_name, params, train_data, train_labels, test_data, test_labels, num_class):
     """
     args:
     model_name : Model name as a string
-    params : List of parameters corresponding to the given model 
+    params : List of parameters corresponding to the given model
     train_Data : 5000x784 numpy array of FMNIST training images
     train_labels : corresponding 5000 numpy array of strings containing ground truth labels
     test_Data : 1000x784 numpy array of FMNIST test images
     test_labels : corresponding 1000 numpy array of strings containing ground truth labels
     num_class : integer number of unique classes being predicted
 
-    Returns: 
-    accuracy : Total model accuracy (numpy float) 
+    Returns:
+    accuracy : Total model accuracy (numpy float)
     confusion matrix: numpy array of dimensions (num_class,num_class)
     auc_score : Area under the curve of the ROC metric (numpy float)
     """
     # 1. Create Classifier model
     model = get_model(model_name, params)
 
-    # 2. Train the model using the training sets 
+    # 2. Train the model using the training sets
+    model.fit(train_data, train_labels)
 
     # 3. Predict the response for test dataset
-   
-    # 4. Model Accuracy, how often is the classifier correct? You may use metrics.accuracy_score(...)
+    y_pred = model.predict(test_data)
 
-    # 5. Calculate the confusion matrix by using the completed the function above 
+    # 4. Model Accuracy, how often is the classifier correct? You may use metrics.accuracy_score(...)
+    accuracy = metrics.accuracy_score(test_labels, y_pred)
+
+    # 5. Calculate the confusion matrix by using the completed the function above
+    confusion_matrix = conf_matrix(y_pred, test_labels, num_class)
 
     # 6. Compute the AUROC score. You may use metrics.roc_auc_score(...)
+    y_pred_proba = model.predict_proba(test_data)
+    # Convert labels to one-hot encoding for multi-class AUROC
+    test_labels_onehot = np.eye(num_class)[test_labels.astype(int)]
+    auc_score = metrics.roc_auc_score(test_labels_onehot, y_pred_proba, multi_class='ovr')
 
-    acc, conf_mat, auc_scor = None, None, None # DELETE THIS LINE ONCE YOU HAVE CODED YOUR RESULTS 
-    return acc, conf_mat, auc_scor
+    return accuracy, confusion_matrix, auc_score
 
 
 if __name__ == "__main__":
     train_data, train_labels, test_data, test_labels = load_Dataset()
     num_class = 10
-    
+
     model_name = "KNN"
-    for k in range(1,6):
-        print(str(k)+"-neighbors result:")
+    for k in range(1, 6):
+        print(str(k) + "-neighbors result:")
         params = k
-        accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels, test_data, test_labels, num_class)
+        accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels,
+                                                                  test_data, test_labels, num_class)
         print("Accuracy:", accuracy)
         print("AUROC Score:", auc_score)
         print(confusion_matrix)
         print()
-        
+
     model_name = "SVM"
     params = [1, True]
-    accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels, test_data, test_labels, num_class)
+    accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels, test_data,
+                                                              test_labels, num_class)
     print("SVM Result")
     print("Accuracy:", accuracy)
     print("AUROC Score:", auc_score)
     print(confusion_matrix)
     print()
-    
+
     model_name = "MLP"
-    params = [(15,10), 1, "relu"]
-    accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels, test_data, test_labels, num_class)
+    params = [(15, 10), 1, "relu"]
+    accuracy, confusion_matrix, auc_score = get_model_results(model_name, params, train_data, train_labels, test_data,
+                                                              test_labels, num_class)
     print("MLP Result")
     print("Accuracy:", accuracy)
     print("AUROC Score:", auc_score)
