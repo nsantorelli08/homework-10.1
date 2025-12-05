@@ -9,7 +9,6 @@ from sklearn import metrics
 
 from utils import load_Dataset
 
-
 def conf_matrix(y_pred, y_true, num_class):
     """
     agrs:
@@ -26,7 +25,6 @@ def conf_matrix(y_pred, y_true, num_class):
         M[int(true_label), int(pred_label)] += 1
 
     return M
-
 
 def get_model(name, params):
     """
@@ -61,7 +59,6 @@ def get_model(name, params):
         print("ERROR: Model name not recognized/supported. Returned None")
 
     return model
-
 
 def get_model_results(model_name, params, train_data, train_labels, test_data, test_labels, num_class):
     """
@@ -101,7 +98,6 @@ def get_model_results(model_name, params, train_data, train_labels, test_data, t
     auc_score = metrics.roc_auc_score(test_labels_onehot, y_pred_proba, multi_class='ovr')
 
     return accuracy, confusion_matrix, auc_score
-
 
 if __name__ == "__main__":
     train_data, train_labels, test_data, test_labels = load_Dataset()
